@@ -934,4 +934,112 @@ tbody tr:hover td {
   .main-nav {
     width: 100%;
   }
+
+  .report-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .report-actions {
+    width: 100%;
+  }
+
+  .report-actions .btn {
+    flex: 1;
+  }
+}
+
+.report-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.print-meta {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .no-print {
+    display: none !important;
+  }
+
+  .page {
+    width: 100%;
+    margin: 0;
+  }
+
+  .panel,
+  .report-panel {
+    box-shadow: none;
+    background: #fff;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .panel-heading h1,
+  .panel-heading .lede {
+    display: none;
+  }
+
+  .print-meta {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .print-meta h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .print-meta p {
+    margin: 0;
+    color: #333;
+    font-size: 0.9rem;
+  }
+
+  .table-wrap {
+    border: 1px solid #ccc;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  th {
+    background: #eee !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .badge {
+    color: #000;
+    border: 1px solid #999;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  tbody tr:hover td {
+    background: transparent;
+  }
 }

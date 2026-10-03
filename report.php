@@ -2,64 +2,47 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/report_query.php';
 require_login();
 
 $pdo = db();
-
+$teacher = current_teacher();
 $classes = $pdo->query('SELECT id, class_name FROM classes ORDER BY class_name')->fetchAll();
 
 $searchType = $_GET['search_type'] ?? 'student';
 $studentId = trim((string) ($_GET['student_id'] ?? ''));
 $classId = (int) ($_GET['class_id'] ?? 0);
-$records = [];
 $searched = isset($_GET['search']);
+$records = [];
+$reportLabel = '';
 
 if ($searched) {
-    if ($searchType === 'student' && $studentId !== '') {
-        $stmt = $pdo->prepare(
-            'SELECT a.attendance_date, a.status, s.student_id, s.full_name,
-                    c.class_name, sub.subject_name, t.full_name AS teacher_name
-             FROM attendance a
-             JOIN students s ON s.id = a.student_id
-             JOIN classes c ON c.id = a.class_id
-             JOIN subjects sub ON sub.id = a.subject_id
-             JOIN teachers t ON t.id = a.teacher_id
-             WHERE s.student_id = ?
-             ORDER BY a.attendance_date DESC, sub.subject_name'
-        );
-        $stmt->execute([$studentId]);
-        $records = $stmt->fetchAll();
-    } elseif ($searchType === 'class' && $classId > 0) {
-        $stmt = $pdo->prepare(
-            'SELECT a.attendance_date, a.status, s.student_id, s.full_name,
-                    c.class_name, sub.subject_name, t.full_name AS teacher_name
-             FROM attendance a
-             JOIN students s ON s.id = a.student_id
-             JOIN classes c ON c.id = a.class_id
-             JOIN subjects sub ON sub.id = a.subject_id
-             JOIN teachers t ON t.id = a.teacher_id
-             WHERE a.class_id = ?
-             ORDER BY a.attendance_date DESC, s.full_name, sub.subject_name'
-        );
-        $stmt->execute([$classId]);
-        $records = $stmt->fetchAll();
-    }
+    [$records, $reportLabel] = fetch_attendance_report($pdo, $searchType, $studentId, $classId);
 }
+
+$queryString = report_query_string($searchType, $studentId, $classId);
+$exportUrl = 'export_excel.php?' . $queryString;
 
 $pageTitle = 'Attendance Report — ' . APP_NAME;
 $activePage = 'report';
 require __DIR__ . '/includes/header.php';
 ?>
 
-<section class="panel">
-  <div class="panel-heading">
+<section class="panel report-panel">
+  <div class="panel-heading report-heading">
     <div>
       <h1>Attendance Report</h1>
-      <p class="lede">Search attendance records by Student ID or by Class.</p>
+      <p class="lede">Search attendance records by Student ID or by Class. Print or export results to Excel.</p>
     </div>
+    <?php if ($searched && $records !== []): ?>
+      <div class="report-actions no-print">
+        <button type="button" class="btn btn-secondary" id="print-report">Print</button>
+        <a class="btn btn-primary" href="<?= e($exportUrl) ?>">Export to Excel</a>
+      </div>
+    <?php endif; ?>
   </div>
 
-  <form method="get" class="filters report-filters">
+  <form method="get" class="filters report-filters no-print">
     <label>
       Search by
       <select name="search_type" id="search_type">
@@ -95,7 +78,16 @@ require __DIR__ . '/includes/header.php';
         Try another Student ID (for example STU-001) or choose a different class.
       </div>
     <?php else: ?>
-      <div class="table-wrap">
+      <div class="print-meta">
+        <h2>Attendance Report<?= $reportLabel !== '' ? ' — ' . e($reportLabel) : '' ?></h2>
+        <p>
+          Printed/exported by <?= e($teacher['full_name'] ?? '') ?>
+          · <?= e(date('M j, Y g:i A')) ?>
+          · <?= count($records) ?> record<?= count($records) === 1 ? '' : 's' ?>
+        </p>
+      </div>
+
+      <div class="table-wrap" id="report-table">
         <table>
           <thead>
             <tr>
@@ -125,12 +117,12 @@ require __DIR__ . '/includes/header.php';
           </tbody>
         </table>
       </div>
-      <p class="result-count"><?= count($records) ?> record<?= count($records) === 1 ? '' : 's' ?> found</p>
+      <p class="result-count no-print"><?= count($records) ?> record<?= count($records) === 1 ? '' : 's' ?> found</p>
     <?php endif; ?>
   <?php else: ?>
     <div class="empty-state">
       <strong>Search attendance history</strong>
-      Choose Student ID or Class above, then search to see marked records.
+      Choose Student ID or Class above, then search to print or export marked records.
     </div>
   <?php endif; ?>
 </section>
@@ -139,6 +131,7 @@ require __DIR__ . '/includes/header.php';
   const searchType = document.getElementById('search_type');
   const studentField = document.getElementById('student_field');
   const classField = document.getElementById('class_field');
+  const printBtn = document.getElementById('print-report');
 
   function syncSearchFields() {
     const isStudent = searchType.value === 'student';
@@ -147,6 +140,10 @@ require __DIR__ . '/includes/header.php';
   }
 
   searchType.addEventListener('change', syncSearchFields);
+
+  if (printBtn) {
+    printBtn.addEventListener('click', () => window.print());
+  }
 </script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

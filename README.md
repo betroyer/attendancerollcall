@@ -8,6 +8,7 @@ PHP + MySQL attendance system for teachers, built for XAMPP.
 2. **Take Attendance** — Select date, class, and subject; mark students Present, Absent, or Late
 3. **Roll Call** — Call students one by one and mark them as you go (keyboard shortcuts supported)
 4. **View Attendance Report** — Search records by Student ID or by Class
+5. **Print & Export** — Print the report or download it as an Excel-ready CSV file
 
 ## Setup
 
